@@ -12,7 +12,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        Hello there. Your bot does not works?
+        Hello there. Your bot does not works? Visit <a href={'/api/telegram-webhook'}>this page</a> to complete setup.
       </main>
     </>
   )
