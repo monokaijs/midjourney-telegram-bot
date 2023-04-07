@@ -16,7 +16,7 @@ export const ReplicateUtils = {
 
   async get(prediction: any) {
     const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), 8000);
+    const id = setTimeout(() => controller.abort(), 29000);
     const response = await fetch(`https://replicate.com/api/models${prediction.version.model.absolute_url}/versions/${prediction.version_id}/predictions/${prediction.uuid}`, )
       .then(r => r.json()).then(response => response.prediction);
     clearTimeout(id);
