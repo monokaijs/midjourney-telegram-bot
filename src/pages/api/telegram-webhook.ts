@@ -49,8 +49,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success: true
     });
   }
-
-  res.status(200).json({
-    success: true
-  })
 }
