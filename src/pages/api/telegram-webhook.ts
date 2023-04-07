@@ -30,20 +30,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const chatId = msg.chat.id;
     if (msg.text && msg.text.startsWith('/draw ')) {
       const sentMsg = await TelegramService.bot.sendMessage(chatId, 'Image is being drawn...');
-      const translatedPrompt = translate(msg.text.slice(6), {
+      const translation = await translate(msg.text.slice(6), {
         to: 'en'
       });
-      midJourney(translatedPrompt).then(res => {
-        if (res.length !== 0) {
+      const translatedPrompt = translation.text;
+
+      midJourney(translatedPrompt).then(async res => {
+        if (!res) {
           throw new Error("Cannot generated images");
         }
-        TelegramService.bot.sendPhoto(chatId, res[0]);
-        TelegramService.bot.deleteMessage(chatId, sentMsg.message_id);
+        await Promise.all([
+          TelegramService.bot.sendPhoto(chatId, res[0]),
+          TelegramService.bot.deleteMessage(chatId, sentMsg.message_id)
+        ])
         res.json({
           ok: true
         });
       }).catch(e => {
-        console.log(e);
+        console.log(e.message);
         TelegramService.bot.editMessageText('Failed to draw. Please check server logs for more details.', {
           chat_id: chatId,
           message_id: sentMsg.message_id
