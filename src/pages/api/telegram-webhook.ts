@@ -11,8 +11,8 @@ const model = "prompthero/openjourney:9936c2001faa2194a261c01381f90e652618799854
 const midJourney = async (prompt: string, parameters = {}) =>
   await ReplicateUtils.run(model, { prompt, ...parameters });
 
-export default async function handler(req: NextRequest) {
-  return await new Promise(async resolve => {
+export default function handler(req: NextRequest) {
+  return new Promise(async resolve => {
     const telegram = new TelegramService();
     const vercelUrl = process.env.VERCEL_URL;
     const webhookPath = `https://${vercelUrl}/api/telegram-webhook`;
@@ -20,21 +20,23 @@ export default async function handler(req: NextRequest) {
     if (req.method === 'GET') {
       try {
         await telegram.setWebhook(webhookPath);
-        return resolve(new Response(JSON.stringify({
+        resolve(new Response(JSON.stringify({
           message: 'Telegram Webhook has been successfully set'
         })));
       } catch (e: any) {
-        return resolve(new Response(JSON.stringify({
+        resolve(new Response(JSON.stringify({
           message: 'Failed to setup Telegram Webhook. ' + e.message
         })));
       }
     } else {
+      console.log('processing message');
       const body = JSON.parse(await req.text());
       const msg = body.message as any;
       if (!msg || !msg.chat) {
-        return resolve(new Response(JSON.stringify({
+        resolve(new Response(JSON.stringify({
           message: "Invalid chat"
-        })))
+        })));
+        return;
       }
       const chatId = msg.chat.id;
 
@@ -42,7 +44,7 @@ export default async function handler(req: NextRequest) {
 
         let timeout = setTimeout(() => {
           telegram.sendMessage(chatId, "Timed out. If you're using free plan of Vercel, please upgrade for more processing time. After upgrade, please set variable `FUNCTION_TIMEOUT` on vercel to a number larger than 15000 (15 seconds) to break this limit.");
-          return resolve(new Response(JSON.stringify({
+          resolve(new Response(JSON.stringify({
             message: "timeout"
           })))
         }, parseInt(process.env.FUNCTION_TIMEOUT as string || "25000"));
@@ -54,10 +56,7 @@ export default async function handler(req: NextRequest) {
         // });
         // const translatedPrompt = translation.text;
         try {
-          const mjResponse = await midJourney(msg.text.slice(6))
-          if (!mjResponse) {
-            throw new Error("Cannot generated images");
-          }
+          const mjResponse = await midJourney(msg.text.slice(6));
           await Promise.all([
             telegram.sendPhoto(chatId, mjResponse[0]),
             telegram.deleteMessage(chatId, sentMsg.message_id)
@@ -67,7 +66,7 @@ export default async function handler(req: NextRequest) {
         }
         console.log('Taken', new Date().getTime() - functionStartTime, 'ms to execute');
         clearTimeout(timeout);
-        return resolve(new Response(JSON.stringify({
+        resolve(new Response(JSON.stringify({
           success: true
         })))
       }
