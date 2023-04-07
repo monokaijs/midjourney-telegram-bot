@@ -12,7 +12,7 @@ export default function Home() {
       </Head>
       <main>
         <p>
-          Hello there. Your bot does not works? Visit <a href={'/api/telegram-webhook'}>this page</a> to complete setup.
+          Hello there. Your bot does not work? Visit <a href={'/api/telegram-webhook'}>this page</a> to complete setup.
         </p>
       </main>
     </>
