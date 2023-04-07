@@ -35,12 +35,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       const translatedPrompt = translation.text;
 
-      midJourney(translatedPrompt).then(async res => {
-        if (!res) {
+      midJourney(translatedPrompt).then(async mjResponse => {
+        if (!mjResponse) {
           throw new Error("Cannot generated images");
         }
         await Promise.all([
-          TelegramService.bot.sendPhoto(chatId, res[0]),
+          TelegramService.bot.sendPhoto(chatId, mjResponse[0]),
           TelegramService.bot.deleteMessage(chatId, sentMsg.message_id)
         ])
         res.json({
