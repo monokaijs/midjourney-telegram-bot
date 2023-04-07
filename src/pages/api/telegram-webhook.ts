@@ -1,7 +1,7 @@
 import type { NextApiRequest } from 'next';
 import {ReplicateUtils} from "@/utils/replicate.utils";
 import TelegramService from "@/services/telegram.service";
-import {translate} from "@/utils/translate.utils";
+import {NextRequest} from "next/server";
 
 export const config = {
   runtime: 'edge',
@@ -11,10 +11,11 @@ const model = "prompthero/openjourney:9936c2001faa2194a261c01381f90e652618799854
 const midJourney = async (prompt: string, parameters = {}) =>
   await ReplicateUtils.run(model, { prompt, ...parameters });
 
-export default async function handler(req: Request) {
+export default async function handler(req: NextRequest) {
   const telegram = new TelegramService();
   const vercelUrl = process.env.VERCEL_URL;
   const webhookPath = `https://${vercelUrl}/api/telegram-webhook`;
+  const functionStartTime = new Date().getTime();
   if (req.method === 'GET') {
     try {
       await telegram.setWebhook(webhookPath);
@@ -27,10 +28,10 @@ export default async function handler(req: Request) {
       }));
     }
   } else {
-    const body = await req.json() as any;
+    const body = JSON.parse(await req.text());
     const msg = body.message as any;
     const chatId = msg.chat.id;
-    console.log('chat id', chatId)
+    console.log('chat id', chatId);
 
     if (msg.text && msg.text.startsWith('/draw ')) {
       const sentMsg = await telegram.sendMessage(chatId, 'Image is being drawn...');
@@ -51,6 +52,7 @@ export default async function handler(req: Request) {
       } catch (e) {
         await telegram.editMessageText(chatId, sentMsg.message_id, 'Failed to draw. Please check server logs for more details.');
       }
+      console.log('Taken', new Date().getTime() - functionStartTime, 'ms to execute');
       return new Response(JSON.stringify({
         success: true
       }))
