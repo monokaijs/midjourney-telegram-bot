@@ -34,12 +34,13 @@ export default async function handler(req: Request) {
 
     if (msg.text && msg.text.startsWith('/draw ')) {
       const sentMsg = await telegram.sendMessage(chatId, 'Image is being drawn...');
-      const translation = await translate(msg.text.slice(6), {
-        to: 'en'
-      });
-      const translatedPrompt = translation.text;
+      // Temporarily disable translation due to limitations
+      // const translation = await translate(msg.text.slice(6), {
+      //   to: 'en'
+      // });
+      // const translatedPrompt = translation.text;
       try {
-        const mjResponse = await midJourney(translatedPrompt)
+        const mjResponse = await midJourney(msg.text.slice(6))
         if (!mjResponse) {
           throw new Error("Cannot generated images");
         }
