@@ -34,13 +34,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         to: 'en'
       });
       midJourney(translatedPrompt).then(res => {
+        if (res.length !== 0) {
+          throw new Error("Cannot generated images");
+        }
         TelegramService.bot.sendPhoto(chatId, res[0]);
         TelegramService.bot.deleteMessage(chatId, sentMsg.message_id);
+        res.json({
+          ok: true
+        });
       }).catch(e => {
         console.log(e);
         TelegramService.bot.editMessageText('Failed to draw. Please check server logs for more details.', {
           chat_id: chatId,
           message_id: sentMsg.message_id
+        });
+        res.json({
+          ok: false
         });
       });
     }
