@@ -20,11 +20,11 @@ export default async function handler(req: NextRequest) {
     if (req.method === 'GET') {
       try {
         await telegram.setWebhook(webhookPath);
-        resolve(new Response(JSON.stringify({
+        return resolve(new Response(JSON.stringify({
           message: 'Telegram Webhook has been successfully set'
         })));
       } catch (e: any) {
-        resolve(new Response(JSON.stringify({
+        return resolve(new Response(JSON.stringify({
           message: 'Failed to setup Telegram Webhook. ' + e.message
         })));
       }
@@ -40,9 +40,9 @@ export default async function handler(req: NextRequest) {
 
       if (msg.text && msg.text.startsWith('/draw ')) {
 
-        setTimeout(() => {
+        let timeout = setTimeout(() => {
           telegram.sendMessage(chatId, "Timed out. If you're using free plan of Vercel, please upgrade for more processing time. After upgrade, please set variable `FUNCTION_TIMEOUT` on vercel to a number larger than 15000 (15 seconds) to break this limit.");
-          resolve(new Response(JSON.stringify({
+          return resolve(new Response(JSON.stringify({
             message: "timeout"
           })))
         }, parseInt(process.env.FUNCTION_TIMEOUT as string || "25000"));
@@ -66,7 +66,8 @@ export default async function handler(req: NextRequest) {
           await telegram.editMessageText(chatId, sentMsg.message_id, 'Failed to draw. Please check server logs for more details.');
         }
         console.log('Taken', new Date().getTime() - functionStartTime, 'ms to execute');
-        resolve(new Response(JSON.stringify({
+        clearTimeout(timeout);
+        return resolve(new Response(JSON.stringify({
           success: true
         })))
       }
