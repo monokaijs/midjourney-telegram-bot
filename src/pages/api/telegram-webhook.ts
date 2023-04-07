@@ -29,6 +29,7 @@ export default async function handler(req: NextRequest) {
     }
   } else {
     const body = JSON.parse(await req.text());
+    console.log('body', body);
     const msg = body.message as any;
     const chatId = msg.chat.id;
     console.log('chat id', chatId);
