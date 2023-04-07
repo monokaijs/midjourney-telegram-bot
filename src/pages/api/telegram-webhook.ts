@@ -31,6 +31,11 @@ export default async function handler(req: NextRequest) {
     const body = JSON.parse(await req.text());
     console.log('body', body);
     const msg = body.message as any;
+    if (!msg.chat) {
+      return new Response(JSON.stringify({
+        message: "Invalid chat"
+      }))
+    }
     const chatId = msg.chat.id;
     console.log('chat id', chatId);
 
