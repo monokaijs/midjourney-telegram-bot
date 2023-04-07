@@ -1,26 +1,23 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiRequest } from 'next';
 import {ReplicateUtils} from "@/utils/replicate.utils";
 import TelegramService from "@/services/telegram.service";
-import TelegramBot from "node-telegram-bot-api";
 import {translate} from "@/utils/translate.utils";
 
 export const config = {
   runtime: 'edge',
 }
 
-export default async function handler(req: NextApiRequest) {
-  const model = "prompthero/openjourney:9936c2001faa2194a261c01381f90e65261879985476014a0a37a334593a05eb";
+const model = "prompthero/openjourney:9936c2001faa2194a261c01381f90e65261879985476014a0a37a334593a05eb";
+const midJourney = async (prompt: string, parameters = {}) =>
+  await ReplicateUtils.run(model, { prompt, ...parameters });
 
-  const midJourney = async (prompt: string, parameters = {}) =>
-    await ReplicateUtils.run(model, { prompt, ...parameters });
-
-  TelegramService.register();
-
+export default async function handler(req: Request) {
+  const telegram = new TelegramService();
   const vercelUrl = process.env.VERCEL_URL;
-  const webhookPath = vercelUrl ? `https://${vercelUrl}/api/telegram-webhook` : `https://${req.headers.host}${req.url}`;
+  const webhookPath = `https://${vercelUrl}/api/telegram-webhook`;
   if (req.method === 'GET') {
     try {
-      await TelegramService.bot.setWebHook(webhookPath);
+      await telegram.setWebhook(webhookPath);
       return new Response(JSON.stringify({
         message: 'Telegram Webhook has been successfully set'
       }));
@@ -30,12 +27,13 @@ export default async function handler(req: NextApiRequest) {
       }));
     }
   } else {
-    const {body} = req;
-    const msg = body.message as TelegramBot.Message;
+    const body = await req.json() as any;
+    const msg = body.message as any;
     const chatId = msg.chat.id;
+    console.log('chat id', chatId)
 
     if (msg.text && msg.text.startsWith('/draw ')) {
-      const sentMsg = await TelegramService.bot.sendMessage(chatId, 'Image is being drawn...');
+      const sentMsg = await telegram.sendMessage(chatId, 'Image is being drawn...');
       const translation = await translate(msg.text.slice(6), {
         to: 'en'
       });
@@ -46,14 +44,11 @@ export default async function handler(req: NextApiRequest) {
           throw new Error("Cannot generated images");
         }
         await Promise.all([
-          TelegramService.bot.sendPhoto(chatId, mjResponse[0]),
-          TelegramService.bot.deleteMessage(chatId, sentMsg.message_id)
+          telegram.sendPhoto(chatId, mjResponse[0]),
+          telegram.deleteMessage(chatId, sentMsg.message_id)
         ]);
       } catch (e) {
-        await TelegramService.bot.editMessageText('Failed to draw. Please check server logs for more details.', {
-          chat_id: chatId,
-          message_id: sentMsg.message_id
-        });
+        await telegram.editMessageText(chatId, sentMsg.message_id, 'Failed to draw. Please check server logs for more details.');
       }
       return new Response(JSON.stringify({
         success: true
