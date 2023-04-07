@@ -26,6 +26,7 @@ class TelegramService {
       },
       body: JSON.stringify({
         url,
+        drop_pending_updates: true
       })
     })
   }
