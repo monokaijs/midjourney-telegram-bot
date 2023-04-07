@@ -29,7 +29,6 @@ export default async function handler(req: NextRequest) {
     }
   } else {
     const body = JSON.parse(await req.text());
-    console.log('body', body);
     const msg = body.message as any;
     if (!msg || !msg.chat) {
       return new Response(JSON.stringify({
@@ -40,6 +39,14 @@ export default async function handler(req: NextRequest) {
     console.log('chat id', chatId);
 
     if (msg.text && msg.text.startsWith('/draw ')) {
+
+      setTimeout(() => {
+        telegram.sendMessage(chatId, "Timed out. If you're using free plan of Vercel, please upgrade for more processing time. After upgrade, please set variable `FUNCTION_TIMEOUT` on vercel to a number larger than 15000 (15 seconds) to break this limit.");
+        return new Response(JSON.stringify({
+          message: "timeout"
+        }))
+      }, parseInt(process.env.FUNCTION_TIMEOUT as string || "25000"));
+
       const sentMsg = await telegram.sendMessage(chatId, 'Image is being drawn...');
       // Temporarily disable translation due to limitations
       // const translation = await translate(msg.text.slice(6), {
