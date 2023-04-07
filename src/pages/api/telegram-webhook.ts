@@ -28,6 +28,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const {body} = req;
     const msg = body.message as TelegramBot.Message;
     const chatId = msg.chat.id;
+    setTimeout(() => {
+      TelegramService.bot.sendMessage(chatId, "Timed out. If you're using free plan of Vercel, please upgrade for more processing time. After upgrade, please set variable `FUNCTION_TIMEOUT` on vercel to a number larger than 15000 (15 seconds) to break this limit.");
+      res.json({
+        success: false,
+        reason: 'time_out'
+      })
+    }, parseInt(process.env.FUNCTION_TIMEOUT as string || "9500"));
     if (msg.text && msg.text.startsWith('/draw ')) {
       const sentMsg = await TelegramService.bot.sendMessage(chatId, 'Image is being drawn...');
       const translation = await translate(msg.text.slice(6), {
